@@ -14,9 +14,9 @@ class ToFU(BaseDataset):
         self.dataset_name = dataset_name
         self.dataset = defaultdict()
         self.if_llama = if_llama
-        self.question_start_token = "[INST] " if self.if_llama else "### Question: "
-        self.question_end_token = " [\INST]" if if_llama else "\n"
-        self.answer_start_token = " " if if_llama else "### Answer: "
+        self.question_start_token = "[INST] " if self.if_llama else "Question: "
+        self.question_end_token = " [/INST]" if if_llama else "\n"
+        self.answer_start_token = "" if if_llama else "Answer: "
         self.subset = subset
         self.dataset = self.get_dataset()
 
@@ -67,18 +67,19 @@ class ToFU(BaseDataset):
                 tokenized = tokenizer(
                     full_text,
                     truncation=True,
-                    padding="max_length",
+                    # padding="max_length",
+                    max_length=200,
                     add_special_tokens=True,
                 )
                 num_question_token = len(
                     tokenizer.tokenize(question, add_special_tokens=True)
                 )
-                pad_length = 512 - len(tokenized.input_ids)
+                pad_length = 200 - len(tokenized.input_ids)
                 pad_input_ids = (
                     tokenized.input_ids + [tokenizer.pad_token_id] * pad_length
                 )
                 pad_attention_mask = tokenized.attention_mask + [0] * pad_length
-                if len(tokenized.input_ids) == 512:
+                if len(tokenized.input_ids) == 200:
                     label = tokenized.input_ids
                 else:
                     label = (
@@ -105,8 +106,8 @@ class ToFU(BaseDataset):
                     tokenized.input_ids[: num_question_token + 1]
                     + refusal_tokenized.input_ids[1:]
                 )
-                if len(refusal_label) < 512:
-                    refusal_label = refusal_label + [-100] * (512 - len(refusal_label))
+                if len(refusal_label) < 200:
+                    refusal_label = refusal_label + [-100] * (200 - len(refusal_label))
                 for i in range(num_question_token):
                     refusal_label[i] = -100
                 results["refused_label"].append(torch.tensor(refusal_label))
@@ -152,18 +153,18 @@ class ToFU(BaseDataset):
                     full_text,
                     truncation=True,
                     padding="max_length",
-                    max_length=512,
+                    max_length=200,
                     add_special_tokens=True,
                 )
                 num_question_token = len(
                     tokenizer.tokenize(question, add_special_tokens=True)
                 )
-                pad_length = 512 - len(tokenized.input_ids)
+                pad_length = 200 - len(tokenized.input_ids)
                 pad_input_ids = (
                     tokenized.input_ids + [tokenizer.pad_token_id] * pad_length
                 )
                 pad_attention_mask = tokenized.attention_mask + [0] * pad_length
-                if len(tokenized.input_ids) == 512:
+                if len(tokenized.input_ids) == 200:
                     label = tokenized.input_ids
                 else:
                     label = tokenized.input_ids + [-100] * pad_length
